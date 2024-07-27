@@ -2,6 +2,11 @@
 
 This repository demonstrates a simple Document Management System with End-to-End Encryption (E2EE). The backend encrypts document contents before sending them to the frontend, which then decrypts and displays the document content.
 
+## Security Note
+
+> [!CAUTION]
+> This example is intended for educational purposes only. For a production environment, ensure to > follow best practices for secure key management and data encryption.
+
 ## Table of Contents
 
 - [Backend (PHP)](#backend-php)
@@ -16,69 +21,78 @@ This repository demonstrates a simple Document Management System with End-to-End
 
 **File: `encrypt_documents.php`**
 
+<details>
+  <summary>Expand to view the PHP Backend Script</summary>
+
 ```php
-<?php
+   <?php
 
-// Define a dummy class to simulate document data retrieval
-class Document {
-    public static function select(...$args) {
-        // Dummy data for demonstration purposes
-        return [
-            (object)['id' => 1, 'title' => 'Document 1', 'content' => 'This is a secret document.'],
-            (object)['id' => 2, 'title' => 'Document 2', 'content' => 'Another secret document.']
-        ];
-    }
-}
+   // Define a dummy class to simulate document data retrieval
+   class Document {
+      public static function select(...$args) {
+         // Dummy data for demonstration purposes
+         return [
+               (object)['id' => 1, 'title' => 'Document 1', 'content' => 'This is a secret document.'],
+               (object)['id' => 2, 'title' => 'Document 2', 'content' => 'Another secret document.']
+         ];
+      }
+   }
 
-// Function to handle document data encryption
-function documents() {
-    // Retrieve document data
-    $documents = Document::select(
-        'id',
-        'title',
-        'content'
-    );
+   // Function to handle document data encryption
+   function documents() {
+      // Retrieve document data
+      $documents = Document::select(
+         'id',
+         'title',
+         'content'
+      );
 
-    // Encryption parameters
-    $applicationKey = 'SecretPassphrase2024'; // Passphrase for encryption
-    $salt = bin2hex(random_bytes(16)); // Random salt (16 bytes) converted to hexadecimal
-    $iterations = 10000; // Number of iterations for PBKDF2
-    $keyLength = 32; // Length of derived key (32 bytes for 256 bits)
+      // Encryption parameters
+      $applicationKey = 'SecretPassphrase2024'; // Passphrase for encryption
+      $salt = bin2hex(random_bytes(16)); // Random salt (16 bytes) converted to hexadecimal
+      $iterations = 10000; // Number of iterations for PBKDF2
+      $keyLength = 32; // Length of derived key (32 bytes for 256 bits)
 
-    // Derive a 256-bit key from the passphrase using PBKDF2
-    $customAppKey = hash_pbkdf2('sha256', $applicationKey, $salt, $iterations, $keyLength, true);
+      // Derive a 256-bit key from the passphrase using PBKDF2
+      $customAppKey = hash_pbkdf2('sha256', $applicationKey, $salt, $iterations, $keyLength, true);
 
-    // Generate a random Initialization Vector (IV)
-    $iv = openssl_random_pseudo_bytes(16);
+      // Generate a random Initialization Vector (IV)
+      $iv = openssl_random_pseudo_bytes(16);
 
-    // Encrypt the 'content' field for each document
-    foreach ($documents as $document) {
-        if (!empty($document->content)) {
-            $document->content = encryptData($document->content, $customAppKey, $iv);
-        }
-    }
+      // Encrypt the 'content' field for each document
+      foreach ($documents as $document) {
+         if (!empty($document->content)) {
+               $document->content = encryptData($document->content, $customAppKey, $iv);
+         }
+      }
 
-    // Return the encrypted data, IV, and salt as JSON
-    header('Content-Type: application/json');
-    echo json_encode([
-        'documents' => $documents,
-        'iv' => base64_encode($iv), // Base64 encode the IV for safe transmission
-        'salt' => $salt
-    ]);
-}
+      // Return the encrypted data, IV, and salt as JSON
+      header('Content-Type: application/json');
+      echo json_encode([
+         'documents' => $documents,
+         'iv' => base64_encode($iv), // Base64 encode the IV for safe transmission
+         'salt' => $salt
+      ]);
+   }
 
-// Function to encrypt data
-function encryptData($data, $key, $iv) {
-    return base64_encode(openssl_encrypt($data, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv));
-}
+   // Function to encrypt data
+   function encryptData($data, $key, $iv) {
+      return base64_encode(openssl_encrypt($data, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv));
+   }
 
-// Execute the function
-documents();
+   // Execute the function
+   documents();
+
 ```
+
+</details>
 
 ## Frontend (JavaScript)
 
 **File: `index.html`**
+
+<details>
+  <summary>Expand to view the JavaScript Frontend Code</summary>
 
 ```html
 <!DOCTYPE html>
@@ -176,26 +190,26 @@ documents();
       // Fetch and display data on page load
       fetchData();
     </script>
+
   </body>
 </html>
 ```
-
-## Security Note
-
-This example is intended for educational purposes only. For a production environment, ensure to follow best practices for secure key management and data encryption.
+</details>
 
 ## How to Use
 
 #### 1. Backend Setup:
-   - Place the `encrypt_documents.php` file on your server.
-   - Ensure PHP is installed and running.
+
+- Place the `encrypt_documents.php` file on your server.
+- Ensure PHP is installed and running.
 
 #### 2. Frontend Setup:
-   - Save the `index.html` file in the same directory or configure the path to point to the encrypt_documents.php endpoint.
+
+- Save the `index.html` file in the same directory or configure the path to point to the encrypt_documents.php endpoint.
 
 #### 3. Testing:
-   - Open `index.html` in a web browser to see the decrypted document content displayed.
 
+- Open `index.html` in a web browser to see the decrypted document content displayed.
 
 ## Contributing
 
@@ -204,7 +218,14 @@ This example is intended for educational purposes only. For a production environ
 3. Make your changes and commit them.
 4. Submit a pull request with a description of the changes and why they were made.
 
-
 ## Acknowledgments
 
 Thanks to the contributors and open-source community for their support and libraries used in this project.
+
+## License
+
+You are welcome to use, modify, and distribute this code for any purpose. This code is provided "as is", without warranty of any kind. The author(s) shall not be liable for any damages arising from its use. Attribution to the original author(s) is appreciated but not required.
+
+<br /><br />
+  [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/marchtala)
+<!-- Proudly created with GPRM ( https://gprm.itsvg.in ) -->
