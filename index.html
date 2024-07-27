@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Document Management System</title>
+</head>
+
+<body>
+   <h1>Document Management System</h1>
+   <div id="output"></div>
+
+   <script>
+      // Asynchronous function to decrypt data
+      async function decryptData(encryptedData, salt, iv) {
+         const applicationKey = 'SecretPassphrase2024'; // Passphrase for decryption
+         const iterations = 10000; // Number of iterations for PBKDF2
+
+         // Encode the passphrase and salt into Uint8Array
+         const encodedApplicationKey = new TextEncoder().encode(applicationKey);
+         const encodedSalt = new TextEncoder().encode(salt);
+
+         // Import the passphrase key material
+         const keyMaterial = await window.crypto.subtle.importKey(
+            'raw',
+            encodedApplicationKey,
+            { name: 'PBKDF2' },
+            false,
+            ['deriveKey']
+         );
+
+         // Derive the encryption key using PBKDF2
+         const derivedKey = await window.crypto.subtle.deriveKey(
+            {
+               name: 'PBKDF2',
+               salt: encodedSalt,
+               iterations: iterations,
+               hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'AES-CBC', length: 256 },
+            true,
+            ['decrypt']
+         );
+
+         // Helper function to convert base64 to ArrayBuffer
+         const base64ToArrayBuffer = (base64) => {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+               bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+         };
+
+         // Convert encrypted data and IV from base64
+         const encryptedArrayBuffer = base64ToArrayBuffer(encryptedData);
+         const decryptedArrayBuffer = await window.crypto.subtle.decrypt(
+            {
+               name: 'AES-CBC',
+               iv: base64ToArrayBuffer(iv)
+            },
+            derivedKey,
+            encryptedArrayBuffer
+         );
+
+         // Convert the decrypted ArrayBuffer to a string
+         const decoder = new TextDecoder();
+         return decoder.decode(decryptedArrayBuffer);
+      }
+
+      // Asynchronous function to fetch and display document data
+      async function fetchData() {
+         const response = await fetch('encrypt_documents.php');
+         const data = await response.json();
+
+         const { documents, iv, salt } = data;
+         const output = document.getElementById('output');
+
+         // Decrypt and display each document's content
+         for (const document of documents) {
+            const decryptedContent = await decryptData(document.content, salt, iv);
+            const documentInfo = document.createElement('div');
+            documentInfo.textContent = `Title: ${document.title}, Content: ${decryptedContent}`;
+            output.appendChild(documentInfo);
+         }
+      }
+
+      // Fetch and display data on page load
+      fetchData();
+   </script>
+</body>
+
+</html>
